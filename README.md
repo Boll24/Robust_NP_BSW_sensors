@@ -3,94 +3,122 @@ Official code for "Robust inverse design of non-periodic Bloch surface wave sens
 
 # BSW Sensor Optimization 🧬🔬
 
-This repository contains the source code for the computational optimization of Bloch Surface Wave (BSW) sensors using genetic algorithms (Differential Evolution and NSGA-II).
+This repository contains the source code for the computational optimization of Bloch Surface Wave (BSW) sensors using genetic algorithms (Differential Evolution and NSGA-II). 
 
-The project leverages the pymoo library to perform both single-objective and multi-objective optimizations on multilayer photonic structures, including periodic configurations.
+The project leverages the `pymoo` library to perform both single-objective and multi-objective optimizations on multilayer photonic structures, including periodic configurations.
 
-📁 Repository Structure
+---
+
+## 📁 Repository Structure
 
 To ensure reproducibility and clean execution, the project is structured as follows:
 
 ```text
-├── data/                  # Directory for initial populations and output results (.nc and .pkl)
+├── data/                  # Directory for initial populations, output results, and intermediate Pareto fronts (.nc, .pkl)
+├── notebooks/             # Jupyter notebooks for data visualization and plotting
 ├── scripts/               # Bash scripts with SLURM directives to launch jobs on remote hosts
 ├── src/                   # Python source code and custom libraries
 ├── environment.yml        # Conda environment configuration file
 └── README.md              # Project documentation
 ```
 
-⚙️ Installation & Environment Setup
+---
 
-This project uses Python and relies heavily on numerical libraries like numpy, torch, xarray, and pymoo. To avoid dependency conflicts, a Conda environment file is provided.
+## ⚙️ Installation & Environment Setup
 
-Clone the repository and navigate to the main folder:
+This project uses **Python** and relies heavily on numerical libraries like `numpy`, `torch`, `xarray`, and `pymoo`. To avoid dependency conflicts, a Conda environment file is provided.
+
+1. **Clone the repository** and navigate to the main folder:
+   ```bash
+   git clone <your-repo-link>
+   cd Robust_NP_BSW_sensors
+   ```
+
+2. **Create the Conda environment** from the provided `environment.yml` file:
+   ```bash
+   conda env create -f environment.yml
+   ```
+
+3. **Activate the environment**:
+   ```bash
+   conda activate bsw-optimization
+   ```
+
+---
+
+## 📄 File Descriptions
+
+### Source Code (`src/`)
+* **`my_libs.py`**: The core custom library containing the objective functions, Transfer Matrix Method (TMM) calculations, vectorized problem classes, and custom callbacks for saving optimization histories.
+* **`MultiObj_robustness_fitting.py`**: Multi-Objective optimization script using NSGA-II to evaluate performance and robustness based on curve fitting.
+* **`MultiObj_robustness_periodicSampling.py`**: Multi-Objective optimization script specifically tailored for **periodic** multilayer structures using robustness sampling.
+* **`MultiObj_robustness_sampling.py`**: Multi-Objective optimization script using NSGA-II to evaluate performance and robustness based on random sampling.
+* **`SingleObj_sensitivity.py`**: Single-Objective optimization script utilizing Differential Evolution (DE) to find the absolute maximum sensitivity of a specific metric.
+
+### Job Submission Scripts (`scripts/`)
+These bash scripts are pre-configured with SLURM directives and `argparse` parameters. They automatically handle CPU core allocation to prevent thread oversubscription on HPC clusters.
+
+---
+
+## 🚀 How to Run the Code
+
+The Python scripts are designed to be launched from the **root directory** of the project. You can run them either locally on your machine or submit them to an HPC cluster.
+
+### Option A: Running Locally (Without SLURM)
+You can execute the optimization scripts directly from your command line. The scripts accept various arguments to define the optimization parameters. 
+
+**Example (Single-Objective Optimization):**
 ```bash
-git clone 
-cd Robust_NP_BSW_sensors
+python src/SingleObj_sensitivity.py --generations 500 --pop_size 50
 ```
 
-Create the Conda environment from the provided environment.yml file:
+**Example (Multi-Objective Optimization):**
 ```bash
-conda env create -f environment.yml
+python src/MultiObj_robustness_sampling.py --generations 1000 --pop_size 100
 ```
+*(Use `python src/<script_name>.py --help` to see all available arguments).*
 
-Activate the environment:
-```bash
-conda activate bsw-optimization
-```
+### Option B: Running on a SLURM Cluster
+If you are working on a High-Performance Computing (HPC) cluster, simply submit the pre-configured jobs using `sbatch`. 
 
-📄 File Descriptions
-
-Source Code (src/)
-
-my_libs.py: The core custom library containing the objective functions, Transfer Matrix Method (TMM) calculations, vectorized problem classes, and custom callbacks for saving optimization histories.
-
-MultiObj_robustness_fitting.py: Multi-Objective optimization script using NSGA-II to evaluate performance and robustness based on curve fitting.
-
-MultiObj_robustness_periodicSampling.py: Multi-Objective optimization script specifically tailored for periodic multilayer structures using robustness sampling.
-
-MultiObj_robustness_sampling.py: Multi-Objective optimization script using NSGA-II to evaluate performance and robustness based on random sampling.
-
-SingleObj_sensitivity.py: Single-Objective optimization script utilizing Differential Evolution (DE) to find the absolute maximum sensitivity of a specific metric.
-
-Job Submission Scripts (scripts/)
-
-These bash scripts are pre-configured with SLURM directives and argparse parameters. They automatically handle CPU core allocation to prevent thread oversubscription.
-
-slurm_multiobj_fitting.sh: Submits the Multi-Objective optimization job (fitting approach) to the cluster.
-
-slurm_multiobj_periodicSampling.sh: Submits the Multi-Objective optimization job (periodic sampling approach).
-
-slurm_multiobj_sampling.sh: Submits the Multi-Objective optimization job (sampling approach).
-
-slurm_singleObj.sh: Submits the Single-Objective (Differential Evolution) optimization job, iterating automatically through a predefined list of random seeds.
-
-🚀 How to Run the Code
-
-The Python scripts are designed to be launched from the root directory of the project using the provided Bash scripts.
-
-Running on a SLURM Cluster (Remote Host)
-
-If you are working on a High-Performance Computing (HPC) cluster, simply submit the jobs using sbatch.
-
-Examples:
+**Examples:**
 ```bash
 sbatch scripts/slurm_multiobj_sampling.sh
 sbatch scripts/slurm_singleObj.sh
 ```
+*Note: The bash scripts will automatically create a `logs/` directory to store the `.out` and `.err` files generated by SLURM.*
 
-Note: The bash scripts will automatically create a logs/ directory to store the .out and .err files generated by SLURM.
+---
 
-Modifying Parameters
+## 💾 Output Data Handling (Execution)
 
-You can easily tweak the optimization parameters (e.g., number of generations, population size, number of bilayers, and theta) by editing the variables directly inside the .sh files located in the scripts/ folder. The scripts use argparse to pass these values securely to the Python codebase.
+To prevent RAM overflow during extensive optimizations (e.g., 2000+ generations), the scripts utilize a robust two-step saving process:
+1. **Incremental Backup (`.pkl`)**: The full evolutionary history is safely dumped into Pickle files every predefined number of generations.
+2. **Final Results (`.nc`)**: At the end of the execution, the final optimal solutions and their corresponding parameters are saved in a clean NetCDF format using `xarray` for easy post-processing.
 
-💾 Output Data Handling
+By default, all outputs generated during a new optimization run are automatically routed to the `data/` directory.
 
-To prevent RAM overflow during extensive optimizations (e.g., 2000+ generations), the scripts use a two-step saving process:
+---
 
-Incremental Backup (.pkl): The full evolutionary history is safely dumped into Pickle files every predefined number of generations.
+## 📦 Provided Datasets
 
-Final Pareto Front (.nc): At the end of the execution, the final optimal solutions and their corresponding parameters are saved in a clean NetCDF format using xarray for easy post-processing and plotting.
+To ensure immediate reproducibility and support the findings of our study, the `data/` directory comes with pre-generated datasets:
 
-Outputs are automatically routed to data .
+* **Initial Populations**: Baseline multilayer configurations provided to kickstart the genetic algorithms without having to generate them from scratch.
+* **`Paretofront/` Subfolder**: Contains the extracted datasets utilized for the final analysis and plotting. Inside, you will find:
+  * **Final Pareto Fronts**: Files like `Final_front.pkl` and `Periodic_Final_front.pkl` containing the finalized optimal trade-offs between Sensitivity ($S_I$) and Robustness ($\mathrm{FOM}_R$) along with their physical parameters.
+  * **Intermediate Pareto Fronts**: Additional `.pkl` files (e.g., `eta10.pkl`, `eta23_furtherOpt10.pkl`) representing the evolutionary progression during the multi-objective optimization process, as detailed in **Section 4 of the Supplementary Information**.
+
+---
+
+## 📊 Visualization & Plotting
+
+To easily visualize the results and generate the figures presented in our study, we provide dedicated Jupyter Notebooks in the `notebooks/` directory.
+
+The notebooks are designed to directly access the provided datasets in the `data/Paretofront/` subfolder. To view or modify the plots, simply open the corresponding notebook:
+
+```bash
+jupyter notebook notebooks/plot_pareto_fronts.ipynb
+```
+
+This notebook is pre-configured to automatically load the `.pkl` files and plot the Pareto Fronts, allowing you to compare the performance of different multilayer configurations.
