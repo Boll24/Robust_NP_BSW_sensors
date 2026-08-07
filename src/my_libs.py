@@ -661,7 +661,7 @@ def dSmax_dthickness_randVar_periodic(x,
             dSmax_dt_array.append(dSmax_dt.item())
             
         # Return negative sensitivity and the scaled error (sum of absolute errors across the ensemble)
-        return -sens_original.squeeze().item(), np.abs(np.array(dSmax_dt_array)).mean() * test_size
+        return -sens_original.squeeze().item(), np.abs(np.array(dSmax_dt_array)).mean()
     else:
         # Massive penalty if the BSW resonance is lost
         return -sens_original.squeeze().item(), 100000000.0
