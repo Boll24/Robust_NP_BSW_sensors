@@ -106,7 +106,7 @@ To ensure immediate reproducibility and support the findings of our study, the `
 
 * **Initial Populations**: Baseline multilayer configurations provided to kickstart the genetic algorithms without having to generate them from scratch.
 * **`Paretofront/` Subfolder**: Contains the extracted datasets utilized for the final analysis and plotting. Inside, you will find:
-  * **Final Pareto Fronts**: Files like `Final_front.pkl` and `Periodic_Final_front.pkl` containing the finalized optimal trade-offs between Sensitivity ($S_I$) and Robustness ($\mathrm{FOM}_R$) along with their physical parameters.
+  * **Final Pareto Fronts**: Files like `Final_front.pkl` (non-periodic) and `Periodic_Final_front.pkl` containing the finalized optimal trade-offs between Sensitivity ($S_I$) and Robustness ($\mathrm{FOM}_R$) along with their physical parameters. **Note for the periodic dataset:** the `thickness` variable is defined as an array `[t_low, t_high, t_cap_layer]`. The `t_low` and `t_high` parameters define the unit cell (which is repeated for 5 bilayers in our configuration), while `t_cap_layer` is the final defect layer added on top.
   * **Intermediate Pareto Fronts**: Additional `.pkl` files (e.g., `eta10.pkl`, `eta23_furtherOpt10.pkl`) representing the evolutionary progression during the multi-objective optimization process, as detailed in **Section 4 of the Supplementary Information**.
 
 ---
